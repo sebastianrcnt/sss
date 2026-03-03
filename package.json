@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "prepare": "npm exec --yes --package typescript tsc -p tsconfig.json && chmod +x dist/cli.js",
+    "prepare": "./node_modules/.bin/tsc -p tsconfig.json && chmod +x dist/cli.js",
     "dev": "tsx src/cli.ts",
     "start": "node dist/cli.js",
     "test": "vitest run src",
@@ -22,12 +22,12 @@
     "@bomb.sh/args": "^0.3.1",
     "@clack/core": "^1.0.1",
     "@clack/prompts": "^1.0.1",
-    "picocolors": "^1.1.1",
-    "typescript": "^5.8.2"
+    "picocolors": "^1.1.1"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
     "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
     "vitest": "^4.0.18"
   }
 }
