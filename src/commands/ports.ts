@@ -76,9 +76,15 @@ function parseProcessPart(text: string): { pid: string; processName: string } {
   }
 
   return {
-    processName: m[1],
+    processName: decodeHexEscapes(m[1]),
     pid: m[2]
   };
+}
+
+function decodeHexEscapes(text: string): string {
+  return text.replace(/\\x([0-9A-Fa-f]{2})/g, (_match, hex: string) =>
+    String.fromCharCode(parseInt(hex, 16))
+  );
 }
 
 export function parseSs(output: string): PortRow[] {
@@ -134,7 +140,7 @@ export function parseLsof(output: string): PortRow[] {
       continue;
     }
 
-    const processName = parts[0] ?? '-';
+    const processName = decodeHexEscapes(parts[0] ?? '-');
     const pid = parts[1] ?? '-';
 
     const protoMatch = line.match(/\b(TCP|UDP)\S*\b/i);
@@ -252,8 +258,9 @@ export async function runPortsCommand(): Promise<void> {
   if (ssResult.code === 0 && ssResult.stdout.trim()) {
     rows = parseSs(ssResult.stdout);
   } else {
-    const lsofResult = await runCommand('lsof', ['-nP', '-i']);
-    source = 'lsof -nP -i';
+    // `lsof` truncates COMMAND by default; `+c 0` keeps the full process name.
+    const lsofResult = await runCommand('lsof', ['-nP', '-i', '+c', '0']);
+    source = 'lsof -nP -i +c 0';
 
     if (lsofResult.stderr.toLowerCase().includes('permission') || lsofResult.stderr.toLowerCase().includes('operation not permitted')) {
       permissionWarning = permissionWarning || lsofResult.stderr.trim();
