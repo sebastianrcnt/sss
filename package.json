@@ -9,8 +9,11 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepare": "npm run build && chmod +x dist/cli.js",
     "dev": "tsx src/cli.ts",
-    "start": "node dist/cli.js"
+    "start": "node dist/cli.js",
+    "test": "vitest run src",
+    "test:watch": "vitest src"
   },
   "engines": {
     "node": ">=18"
@@ -24,6 +27,7 @@
   "devDependencies": {
     "@types/node": "^22.13.10",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^4.0.18"
   }
 }

@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { log, note, spinner } from '@clack/prompts';
 import pc from 'picocolors';
 
-type PortRow = {
+export type PortRow = {
   protocol: string;
   address: string;
   port: string;
@@ -42,7 +42,7 @@ async function runCommand(command: string, args: string[]): Promise<CmdResult> {
   });
 }
 
-function splitAddressPort(endpoint: string): { address: string; port: string } {
+export function splitAddressPort(endpoint: string): { address: string; port: string } {
   if (!endpoint) {
     return { address: '-', port: '-' };
   }
@@ -81,7 +81,7 @@ function parseProcessPart(text: string): { pid: string; processName: string } {
   };
 }
 
-function parseSs(output: string): PortRow[] {
+export function parseSs(output: string): PortRow[] {
   const rows: PortRow[] = [];
 
   for (const raw of output.split('\n')) {
@@ -90,15 +90,22 @@ function parseSs(output: string): PortRow[] {
       continue;
     }
 
-    const m = line.match(/^(\S+)\s+(\S+)\s+\S+\s+\S+\s+(\S+)\s+\S+\s*(.*)$/);
+    if (line.toLowerCase().startsWith('netid ')) {
+      continue;
+    }
+
+    const m = line.match(/^(\S+)\s+(\S+)\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s*(.*)$/);
     if (!m) {
       continue;
     }
 
     const protocol = m[1].toUpperCase();
+    if (!protocol.startsWith('TCP') && !protocol.startsWith('UDP')) {
+      continue;
+    }
     const state = m[2].toUpperCase();
     const local = m[3];
-    const processPart = m[4] ?? '';
+    const processPart = m[5] ?? '';
     const { address, port } = splitAddressPort(local);
     const { pid, processName } = parseProcessPart(processPart);
 
@@ -115,7 +122,7 @@ function parseSs(output: string): PortRow[] {
   return rows;
 }
 
-function parseLsof(output: string): PortRow[] {
+export function parseLsof(output: string): PortRow[] {
   const rows: PortRow[] = [];
   const lines = output.split('\n').filter((line) => line.trim().length > 0);
 
@@ -123,21 +130,20 @@ function parseLsof(output: string): PortRow[] {
     const line = lines[i];
     const parts = line.trim().split(/\s+/);
 
-    if (parts.length < 9) {
+    if (parts.length < 2) {
       continue;
     }
 
     const processName = parts[0] ?? '-';
     const pid = parts[1] ?? '-';
-    const nameField = parts.slice(8).join(' ');
 
-    const protoMatch = nameField.match(/\b(TCP|UDP)\b/i);
+    const protoMatch = line.match(/\b(TCP|UDP)\S*\b/i);
     const protocol = (protoMatch?.[1] ?? 'UNKNOWN').toUpperCase();
 
-    const stateMatch = nameField.match(/\(([^)]+)\)\s*$/);
+    const stateMatch = line.match(/\(([^)]+)\)\s*$/);
     const state = (stateMatch?.[1] ?? (protocol === 'UDP' ? 'UNCONN' : 'UNKNOWN')).toUpperCase();
 
-    const endpointMatch = nameField.match(/\b(?:TCP|UDP)\s+([^\s]+)/i);
+    const endpointMatch = line.match(/\b(?:TCP|UDP)\S*\s+([^\s]+)/i);
     const endpoint = endpointMatch?.[1] ?? '';
     const localEndpoint = endpoint.split('->')[0] ?? endpoint;
     const { address, port } = splitAddressPort(localEndpoint);
