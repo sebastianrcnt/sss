@@ -8,7 +8,6 @@
     },
     "scripts": {
         "build": "node ./scripts/build.mjs",
-        "prepare": "husky",
         "dev": "tsx src/cli.ts",
         "start": "./dist/sss",
         "test": "vitest run src",
@@ -31,7 +30,6 @@
     },
     "devDependencies": {
         "@types/node": "^22.13.10",
-        "husky": "^9.1.7",
         "tsx": "^4.19.3",
         "typescript": "^5.8.2",
         "vitest": "^4.0.18"

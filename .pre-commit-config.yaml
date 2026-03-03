@@ -1,0 +1,24 @@
+repos:
+  # 기본적인 공용 훅들(EOF, 공백, YAML 체크 등)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: check-added-large-files
+
+  # dist/sss가 최신인지 보장하는 훅 (커밋 전에 build 실행 + 변경 있으면 실패)
+  - repo: local
+    hooks:
+      - id: build-sss
+        name: Build dist/sss
+        entry: bash -lc 'npm run build'
+        language: system
+        pass_filenames: false
+
+      - id: ensure-dist-clean
+        name: Ensure dist/sss is committed
+        entry: bash -lc 'git diff --quiet -- dist/sss || (echo "dist/sss changed. Run npm run build, git add dist/sss, then retry." && git status --porcelain && exit 1)'
+        language: system
+        pass_filenames: false
