@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { parse } from '@bomb.sh/args';
 import { intro, log, outro } from '@clack/prompts';
 import { runPortsCommand } from './commands/ports.js';

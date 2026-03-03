@@ -1,32 +1,38 @@
 {
-  "name": "sss",
-  "version": "0.1.0",
-  "description": "supershell: beautiful Unix CLI utilities",
-  "type": "module",
-  "bin": {
-    "sss": "./dist/sss"
-  },
-  "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "prepare": "npm run build",
-    "dev": "tsx src/cli.ts",
-    "start": "node dist/cli.js",
-    "test": "vitest run src",
-    "test:watch": "vitest src"
-  },
-  "engines": {
-    "node": ">=18"
-  },
-  "dependencies": {
-    "@bomb.sh/args": "^0.3.1",
-    "@clack/core": "^1.0.1",
-    "@clack/prompts": "^1.0.1",
-    "picocolors": "^1.1.1"
-  },
-  "devDependencies": {
-    "@types/node": "^22.13.10",
-    "tsx": "^4.19.3",
-    "typescript": "^5.8.2",
-    "vitest": "^4.0.18"
-  }
+    "name": "sss",
+    "version": "0.1.0",
+    "description": "supershell: beautiful Unix CLI utilities",
+    "type": "module",
+    "bin": {
+        "sss": "./dist/sss"
+    },
+    "scripts": {
+        "build": "node ./scripts/build.mjs",
+        "prepare": "npm run build",
+        "dev": "tsx src/cli.ts",
+        "start": "./dist/sss",
+        "test": "vitest run src",
+        "test:watch": "vitest src"
+    },
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE"
+    ],
+    "engines": {
+        "node": ">=18"
+    },
+    "dependencies": {
+        "@bomb.sh/args": "^0.3.1",
+        "@clack/core": "^1.0.1",
+        "@clack/prompts": "^1.0.1",
+        "picocolors": "^1.1.1"
+    },
+    "devDependencies": {
+        "@types/node": "^22.13.10",
+        "esbuild": "^0.27.3",
+        "tsx": "^4.19.3",
+        "typescript": "^5.8.2",
+        "vitest": "^4.0.18"
+    }
 }
