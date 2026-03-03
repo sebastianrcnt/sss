@@ -13,11 +13,6 @@
         "test": "vitest run src",
         "test:watch": "vitest src"
     },
-    "files": [
-        "dist",
-        "README.md",
-        "LICENSE"
-    ],
     "engines": {
         "node": ">=18"
     },
