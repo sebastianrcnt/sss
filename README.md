@@ -4,22 +4,10 @@ A Unix-only Node.js CLI toolkit with useful shell utilities and polished termina
 
 ## Install
 
-Install directly from GitHub with npm:
+Install globally from GitHub:
 
 ```bash
-npm install -g github:<OWNER>/<REPO>
-```
-
-Example:
-
-```bash
-npm install -g github:coolguy/sss
-```
-
-Install a specific tagged version:
-
-```bash
-npm install -g github:<OWNER>/<REPO>#v0.1.0
+npm i -g https://github.com/sebastianrcnt/sss/tarball/main
 ```
 
 After install:
