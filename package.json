@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "prepare": "npm run build && chmod +x dist/cli.js",
+    "prepare": "npm exec --yes --package typescript tsc -p tsconfig.json && chmod +x dist/cli.js",
     "dev": "tsx src/cli.ts",
     "start": "node dist/cli.js",
     "test": "vitest run src",
