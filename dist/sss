@@ -579,6 +579,20 @@ async function runCommand(command, args) {
     });
   });
 }
+function withSudo(command, args, useSudo) {
+  if (!useSudo) {
+    return { command, args, label: `${command} ${args.join(" ")}`.trim() };
+  }
+  return {
+    command: "sudo",
+    args: [command, ...args],
+    label: `sudo ${command} ${args.join(" ")}`.trim()
+  };
+}
+function isPermissionIssue(stderr) {
+  const message = stderr.toLowerCase();
+  return message.includes("permission") || message.includes("operation not permitted") || message.includes("not allowed") || message.includes("a password is required");
+}
 function splitAddressPort(endpoint) {
   if (!endpoint) {
     return { address: "-", port: "-" };
@@ -741,22 +755,25 @@ function renderTable(rows) {
 ${dividerLine}
 ${body}`;
 }
-async function runPortsCommand() {
+async function runPortsCommand(options = {}) {
+  const useSudo = Boolean(options.sudo);
   const loading = bt2();
-  loading.start("Collecting socket data...");
-  const ssResult = await runCommand("ss", ["-tulnp"]);
+  loading.start(useSudo ? "Collecting socket data with sudo..." : "Collecting socket data...");
+  const ssInvocation = withSudo("ss", ["-tulnp"], useSudo);
+  const ssResult = await runCommand(ssInvocation.command, ssInvocation.args);
   let rows = [];
-  let source = "ss -tulnp";
+  let source = ssInvocation.label;
   let permissionWarning = "";
-  if (ssResult.stderr.toLowerCase().includes("permission") || ssResult.stderr.toLowerCase().includes("operation not permitted")) {
+  if (isPermissionIssue(ssResult.stderr)) {
     permissionWarning = ssResult.stderr.trim();
   }
   if (ssResult.code === 0 && ssResult.stdout.trim()) {
     rows = parseSs(ssResult.stdout);
   } else {
-    const lsofResult = await runCommand("lsof", ["-nP", "-i", "+c", "0"]);
-    source = "lsof -nP -i +c 0";
-    if (lsofResult.stderr.toLowerCase().includes("permission") || lsofResult.stderr.toLowerCase().includes("operation not permitted")) {
+    const lsofInvocation = withSudo("lsof", ["-nP", "-i", "+c", "0"], useSudo);
+    const lsofResult = await runCommand(lsofInvocation.command, lsofInvocation.args);
+    source = lsofInvocation.label;
+    if (isPermissionIssue(lsofResult.stderr)) {
       permissionWarning = permissionWarning || lsofResult.stderr.trim();
     }
     if (lsofResult.code === 0 && lsofResult.stdout.trim()) {
@@ -796,6 +813,12 @@ function usage() {
   R2.message("Commands:");
   R2.message("  ports    Show bound addresses/ports and related processes");
 }
+function portsUsage() {
+  R2.message("Usage: sss ports [--sudo]");
+  R2.message("");
+  R2.message("Options:");
+  R2.message("  -s, --sudo    Run socket inspection via sudo for better PID/process visibility");
+}
 async function main() {
   if (process.platform === "win32") {
     R2.error("sss is Unix-only. Windows is not supported.");
@@ -813,9 +836,18 @@ async function main() {
     return;
   }
   switch (command) {
-    case "ports":
-      await runPortsCommand();
+    case "ports": {
+      const portsArgs = b(process.argv.slice(3), {
+        boolean: ["help", "sudo"],
+        alias: { h: "help", s: "sudo" }
+      });
+      if (portsArgs.help) {
+        portsUsage();
+        return;
+      }
+      await runPortsCommand({ sudo: Boolean(portsArgs.sudo) });
       return;
+    }
     default:
       R2.error(`Unknown command: ${command}`);
       usage();

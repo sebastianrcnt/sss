@@ -18,6 +18,10 @@ type CmdResult = {
   error?: Error;
 };
 
+export type PortsCommandOptions = {
+  sudo?: boolean;
+};
+
 async function runCommand(command: string, args: string[]): Promise<CmdResult> {
   return new Promise<CmdResult>((resolve) => {
     const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
@@ -40,6 +44,28 @@ async function runCommand(command: string, args: string[]): Promise<CmdResult> {
       resolve({ code: code ?? 1, stdout, stderr });
     });
   });
+}
+
+function withSudo(command: string, args: string[], useSudo: boolean): { command: string; args: string[]; label: string } {
+  if (!useSudo) {
+    return { command, args, label: `${command} ${args.join(' ')}`.trim() };
+  }
+
+  return {
+    command: 'sudo',
+    args: [command, ...args],
+    label: `sudo ${command} ${args.join(' ')}`.trim()
+  };
+}
+
+function isPermissionIssue(stderr: string): boolean {
+  const message = stderr.toLowerCase();
+  return (
+    message.includes('permission') ||
+    message.includes('operation not permitted') ||
+    message.includes('not allowed') ||
+    message.includes('a password is required')
+  );
 }
 
 export function splitAddressPort(endpoint: string): { address: string; port: string } {
@@ -242,16 +268,18 @@ function renderTable(rows: PortRow[]): string {
   return `${headerLine}\n${dividerLine}\n${body}`;
 }
 
-export async function runPortsCommand(): Promise<void> {
+export async function runPortsCommand(options: PortsCommandOptions = {}): Promise<void> {
+  const useSudo = Boolean(options.sudo);
   const loading = spinner();
-  loading.start('Collecting socket data...');
+  loading.start(useSudo ? 'Collecting socket data with sudo...' : 'Collecting socket data...');
 
-  const ssResult = await runCommand('ss', ['-tulnp']);
+  const ssInvocation = withSudo('ss', ['-tulnp'], useSudo);
+  const ssResult = await runCommand(ssInvocation.command, ssInvocation.args);
   let rows: PortRow[] = [];
-  let source = 'ss -tulnp';
+  let source = ssInvocation.label;
   let permissionWarning = '';
 
-  if (ssResult.stderr.toLowerCase().includes('permission') || ssResult.stderr.toLowerCase().includes('operation not permitted')) {
+  if (isPermissionIssue(ssResult.stderr)) {
     permissionWarning = ssResult.stderr.trim();
   }
 
@@ -259,10 +287,11 @@ export async function runPortsCommand(): Promise<void> {
     rows = parseSs(ssResult.stdout);
   } else {
     // `lsof` truncates COMMAND by default; `+c 0` keeps the full process name.
-    const lsofResult = await runCommand('lsof', ['-nP', '-i', '+c', '0']);
-    source = 'lsof -nP -i +c 0';
+    const lsofInvocation = withSudo('lsof', ['-nP', '-i', '+c', '0'], useSudo);
+    const lsofResult = await runCommand(lsofInvocation.command, lsofInvocation.args);
+    source = lsofInvocation.label;
 
-    if (lsofResult.stderr.toLowerCase().includes('permission') || lsofResult.stderr.toLowerCase().includes('operation not permitted')) {
+    if (isPermissionIssue(lsofResult.stderr)) {
       permissionWarning = permissionWarning || lsofResult.stderr.trim();
     }
 

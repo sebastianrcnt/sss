@@ -7,11 +7,24 @@ type ParsedArgs = {
   help?: boolean;
 };
 
+type PortsArgs = {
+  _: Array<string | number>;
+  help?: boolean;
+  sudo?: boolean;
+};
+
 function usage(): void {
   log.message('Usage: sss <command>');
   log.message('');
   log.message('Commands:');
   log.message('  ports    Show bound addresses/ports and related processes');
+}
+
+function portsUsage(): void {
+  log.message('Usage: sss ports [--sudo]');
+  log.message('');
+  log.message('Options:');
+  log.message('  -s, --sudo    Run socket inspection via sudo for better PID/process visibility');
 }
 
 async function main(): Promise<void> {
@@ -35,9 +48,20 @@ async function main(): Promise<void> {
   }
 
   switch (command) {
-    case 'ports':
-      await runPortsCommand();
+    case 'ports': {
+      const portsArgs = parse(process.argv.slice(3), {
+        boolean: ['help', 'sudo'],
+        alias: { h: 'help', s: 'sudo' }
+      }) as PortsArgs;
+
+      if (portsArgs.help) {
+        portsUsage();
+        return;
+      }
+
+      await runPortsCommand({ sudo: Boolean(portsArgs.sudo) });
       return;
+    }
     default:
       log.error(`Unknown command: ${command}`);
       usage();
