@@ -13,6 +13,9 @@
         "test": "vitest run src",
         "test:watch": "vitest src"
     },
+    "files": [
+        "dist/"
+    ],
     "engines": {
         "node": ">=18"
     },
