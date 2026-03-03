@@ -2,7 +2,6 @@
   "name": "sss",
   "version": "0.1.0",
   "description": "supershell: beautiful Unix CLI utilities",
-  "private": true,
   "type": "module",
   "bin": {
     "sss": "./dist/cli.js"
